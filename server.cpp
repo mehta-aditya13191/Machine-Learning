@@ -71,3 +71,78 @@ int main(){
     return 0;
     
 }
+
+
+########################################################################################33
+    #include <iostream>
+#include <cstring>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
+using namespace std;
+
+int main() {
+
+    int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if (serverSocket < 0) {
+        cerr << "Socket creation failed!" << endl;
+        return 1;
+    }
+    cout << "Socket created successfully." << endl;
+
+    sockaddr_in serverAddress{};
+    serverAddress.sin_family = AF_INET;
+    serverAddress.sin_port = htons(8080);
+    serverAddress.sin_addr.s_addr = INADDR_ANY;
+
+    if (bind(serverSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0) {
+        cerr << "Binding failed!" << endl;
+        close(serverSocket);
+        return 1;
+    }
+    cout << "Bind successful." << endl;
+
+    if (listen(serverSocket, 5) < 0) {
+        cerr << "Listen failed!" << endl;
+        close(serverSocket);
+        return 1;
+    }
+    cout << "Server is listening on port 8080..." << endl;
+
+    
+    int clientSocket = accept(serverSocket, nullptr, nullptr);
+    if (clientSocket < 0) {
+        cerr << "Accept failed!" << endl;
+        close(serverSocket);
+        return 1;
+    }
+    cout << "Connection accepted." << endl;
+
+    char buffer[1024];
+    while (true) {
+        memset(buffer, 0, sizeof(buffer));
+        int bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0);
+        if (bytesReceived < 0) {
+            cerr << "Receive failed!" << endl;
+            break;
+        } else if (bytesReceived == 0) {
+            cout << "Client disconnected." << endl;
+            break;
+        }
+
+        string msg(buffer);
+        cout << "Client: " << msg << endl;
+
+        if (msg == "bye") {
+            cout << "Exit command received. Closing connection." << endl;
+            break;
+        }
+    }
+
+    close(clientSocket);
+    close(serverSocket);
+    cout << "Sockets closed. Server exiting." << endl;
+
+    return 0;
+}
